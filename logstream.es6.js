@@ -22,8 +22,8 @@ export default function logstream(path) {
          .map(l => ({ name: 'channelpoint', txid: l.m[1], index: +l.m[2] }))
 
     // balance { ourBalance, theirBalance }
-  , line$.flatMap(matchRe(/our_balance=(\S+) BTC, their_balance=(\S+) BTC/))
-         .map(l => ({ name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]) }))
+  , line$.flatMap(matchRe(/state transition accepted: our_balance=(\S+) BTC, their_balance=(\S+) BTC/))
+         .map(l => ({ name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]), str: l.str }))
 
   // blockheight { height }
   , line$.flatMap(matchRe(/revoked height (\d+), now at (\d+)/))

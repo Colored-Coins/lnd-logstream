@@ -48,8 +48,8 @@ function logstream(path) {
        })
 
        // balance { ourBalance, theirBalance }
-       , line$.flatMap(matchRe(/our_balance=(\S+) BTC, their_balance=(\S+) BTC/)).map(function (l) {
-              return { name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]) };
+       , line$.flatMap(matchRe(/state transition accepted: our_balance=(\S+) BTC, their_balance=(\S+) BTC/)).map(function (l) {
+              return { name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]), str: l.str };
        })
 
        // blockheight { height }
