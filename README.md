@@ -6,19 +6,24 @@ Continuously tail the [lnd](https://github.com/lightningnetwork/lnd) log files f
 
 ### Install
 
-    npm install lnd-logstream
+    $ npm install lnd-logstream
 
 ### Use
 
-    import logstream from 'lnd-logstream'
+```js
+import logstream from 'lnd-logstream'
 
-    // returns an RxJS event stream by default
-    let log$ = logstream('/home/.lnd/logs/lnd.log')
-    log$.subscribe(ev => console.log(ev))
+// by default, returns an RxJS event stream of [name, data] tuples
+let ourBalance$ = logstream('/home/.lnd/logs/simnet/lnd.log')
+    .filter(([ name, data ]) => name == 'balance')
+    .map(([ name, data ]) => data.ours)
 
-    // can also be used as an EventEmitter
-    let emitter = logstream.asEmitter('/home/.lnd/logs/lnd.log')
-    emitter.on('balance', d => console.log('ourBalance', d.ourBalance))
+ourBalance$.subscribe(b => console.log('ourBalance', b))
+
+// can also be used as an EventEmitter
+let emitter = logstream.asEmitter('/home/.lnd/logs/simnet/lnd.log')
+emitter.on('balance', data => console.log('ourBalance', d.ours))
+```
 
 ### License
 

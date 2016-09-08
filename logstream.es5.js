@@ -30,56 +30,57 @@ var doWith = function doWith(val, fn) {
     matchRe = function matchRe(re) {
        return function (line) {
               return doWith(line.match(re), function (m) {
-                     return m ? [{ str: line, m: m }] : [];
+                     return m ? [m] : [];
               });
        };
 },
     formatToken = function formatToken(amount) {
-       return (0, _moveDecimalPoint2.default)(amount, 8);
+       return +(0, _moveDecimalPoint2.default)(amount, 8);
 };
 
 function logstream(path) {
        var line$ = tail(path);
 
        return _rx.Observable.merge(
-       // channelpoint { point }
-       line$.flatMap(matchRe(/LNWL: ChannelPoint\(([0-9a-f]+):(\d+)\)/)).map(function (l) {
-              return { name: 'channelpoint', txid: l.m[1], index: +l.m[2] };
+       // outpoint: { txid, index }
+       line$.flatMap(matchRe(/LNWL: ChannelPoint\(([0-9a-f]+):(\d+)\)/)).map(function (m) {
+              return ['outpoint', { txid: m[1], index: +m[2] }];
        })
 
-       // balance { ourBalance, theirBalance }
-       , line$.flatMap(matchRe(/state transition accepted: our_balance=(\S+) BTC, their_balance=(\S+) BTC/)).map(function (l) {
-              return { name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]), str: l.str };
+       // balance: { ours, theirs }
+       , line$.flatMap(matchRe(/state transition accepted: our_balance=(\S+) BTC, their_balance=(\S+) BTC/)).map(function (m) {
+              return ['balance', { ours: formatToken(m[1]), theirs: formatToken(m[2]) }];
        })
 
-       // blockheight { height }
-       , line$.flatMap(matchRe(/revoked height (\d+), now at (\d+)/)).flatMap(function (l) {
-              return [{ name: 'block', height: l.m[2] }, { name: 'revoked', height: l.m[1] }];
+       // height: height
+       // revoked: height
+       , line$.flatMap(matchRe(/revoked height (\d+), now at (\d+)/)).flatMap(function (m) {
+              return _rx.Observable.of(['revoked', +m[1]], ['height', +m[2]]);
        })
 
-       // readmsg { source, msg }
-       , line$.flatMap(matchRe(/PEER: readMessage from (\S+): (.*)/)).map(function (l) {
-              return { name: 'readmsg', peer: l.m[1], msg: l.m[2] };
+       // readmsg: { source, msg }
+       , line$.flatMap(matchRe(/PEER: readMessage from (\S+): (.*)/)).map(function (m) {
+              return ['readmsg', { peer: m[1], msg: m[2] }];
        })
 
-       // writemsg { dest, msg }
-       , line$.flatMap(matchRe(/PEER: writeMessage to (\S+) (.*)/)).map(function (l) {
-              return { name: 'writemsg', peer: l.m[1], msg: l.m[2] };
+       // writemsg: { dest, msg }
+       , line$.flatMap(matchRe(/PEER: writeMessage to (\S+) (.*)/)).map(function (m) {
+              return ['writemsg', { peer: m[1], msg: m[2] }];
        })
 
-       // inconn { source }
-       , line$.flatMap(matchRe(/New inbound connection from (\s+)/)).map(function (l) {
-              return { name: 'inconn', peer: l.m[1] };
+       // inconn: source
+       , line$.flatMap(matchRe(/New inbound connection from (\s+)/)).map(function (m) {
+              return ['inconn', m[1]];
        })
 
-       // outconn { dest }
-       , line$.flatMap(matchRe(/Connected to peer (\S+)/)).map(function (l) {
-              return { name: 'outconn', dest: l.m[1] };
+       // outconn: dest
+       , line$.flatMap(matchRe(/Connected to peer (\S+)/)).map(function (m) {
+              return ['outconn', m[1]];
        })
 
-       // bench
-       , line$.flatMap(matchRe(/HSWC: Sent (\d+) satoshis, received (\d+) satoshi in the last (\d+ \S+) \(([\d.]+) tx\/sec\)/)).map(function (l) {
-              return { name: 'benchmark', sent: l.m[1], recv: l.m[2], timeframe: l.m[3], tps: l.m[4] };
+       // bench: { sent, recv, timeframe, tps  }
+       , line$.flatMap(matchRe(/HSWC: Sent (\d+) satoshis, received (\d+) satoshi in the last (\d+ \S+) \(([\d.]+) tx\/sec\)/)).map(function (m) {
+              return ['benchmark', { sent: m[1], recv: m[2], timeframe: m[3], tps: m[4] }];
        }));
 }
 

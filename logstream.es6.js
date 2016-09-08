@@ -10,45 +10,45 @@ const tail = path => {
 }
 
 const doWith = (val, fn) => fn(val)
-    , matchRe = re => line => doWith(line.match(re), m => m ? [ { str: line, m } ] : [])
-    , formatToken = amount => moveDec(amount, 8)
+    , matchRe = re => line => doWith(line.match(re), m => m ? [ m ] : [])
+    , formatToken = amount => +moveDec(amount, 8)
 
 export default function logstream(path) {
   let line$ = tail(path)
 
   return O.merge(
-    // channelpoint { point }
+    // outpoint: { txid, index }
     line$.flatMap(matchRe(/LNWL: ChannelPoint\(([0-9a-f]+):(\d+)\)/))
-         .map(l => ({ name: 'channelpoint', txid: l.m[1], index: +l.m[2] }))
+         .map(m => ['outpoint', { txid: m[1], index: +m[2] }])
 
-    // balance { ourBalance, theirBalance }
+    // balance: { ours, theirs }
   , line$.flatMap(matchRe(/state transition accepted: our_balance=(\S+) BTC, their_balance=(\S+) BTC/))
-         .map(l => ({ name: 'balance', ourBalance: formatToken(l.m[1]), theirBalance: formatToken(l.m[2]), str: l.str }))
+         .map(m => [ 'balance', { ours: formatToken(m[1]), theirs: formatToken(m[2]) }])
 
-  // blockheight { height }
+  // height: height
+  // revoked: height
   , line$.flatMap(matchRe(/revoked height (\d+), now at (\d+)/))
-         .flatMap(l => ([ { name: 'block' , height: l.m[2] },
-                          { name: 'revoked', height: l.m[1] } ]))
+         .flatMap(m => O.of([ 'revoked', +m[1] ], [ 'height', +m[2] ]))
 
-    // readmsg { source, msg }
+    // readmsg: { source, msg }
   , line$.flatMap(matchRe(/PEER: readMessage from (\S+): (.*)/))
-         .map(l => ({ name: 'readmsg', peer: l.m[1], msg: l.m[2] }))
+         .map(m => [ 'readmsg', { peer: m[1], msg: m[2] }])
 
-  // writemsg { dest, msg }
+  // writemsg: { dest, msg }
   , line$.flatMap(matchRe(/PEER: writeMessage to (\S+) (.*)/))
-         .map(l => ({ name: 'writemsg', peer: l.m[1], msg: l.m[2] }))
+         .map(m => [ 'writemsg', { peer: m[1], msg: m[2] }])
 
-  // inconn { source }
+  // inconn: source
   , line$.flatMap(matchRe(/New inbound connection from (\s+)/))
-         .map(l => ({ name: 'inconn', peer: l.m[1] }))
+         .map(m => [ 'inconn', m[1] ])
 
-  // outconn { dest }
+  // outconn: dest
   , line$.flatMap(matchRe(/Connected to peer (\S+)/))
-         .map(l => ({ name: 'outconn', dest: l.m[1] }))
+         .map(m => [ 'outconn', m[1] ])
 
-  // bench
+  // bench: { sent, recv, timeframe, tps  }
   , line$.flatMap(matchRe(/HSWC: Sent (\d+) satoshis, received (\d+) satoshi in the last (\d+ \S+) \(([\d.]+) tx\/sec\)/))
-         .map(l => ({ name: 'benchmark', sent: l.m[1], recv: l.m[2], timeframe: l.m[3], tps: l.m[4] }))
+         .map(m => [ 'benchmark', { sent: m[1], recv: m[2], timeframe: m[3], tps: m[4] }])
   )
 }
 
