@@ -30,11 +30,11 @@ export default function logstream(path) {
   , line$.flatMap(matchRe(/revoked height (\d+), now at (\d+)/))
          .flatMap(m => O.of([ 'revoked', +m[1] ], [ 'height', +m[2] ]))
 
-    // readmsg: { source, msg }
+    // readmsg: { peer, msg }
   , line$.flatMap(matchRe(/PEER: readMessage from (\S+): (.*)/))
          .map(m => [ 'readmsg', { peer: m[1], msg: m[2] }])
 
-  // writemsg: { dest, msg }
+  // writemsg: { peer, msg }
   , line$.flatMap(matchRe(/PEER: writeMessage to (\S+) (.*)/))
          .map(m => [ 'writemsg', { peer: m[1], msg: m[2] }])
 
