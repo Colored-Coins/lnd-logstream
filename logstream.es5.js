@@ -18,6 +18,8 @@ var _moveDecimalPoint2 = _interopRequireDefault(_moveDecimalPoint);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 var tail = function tail(path) {
        var t = new _tail.Tail(path);
 
@@ -58,12 +60,12 @@ function logstream(path) {
               return _rx.Observable.of(['revoked', +m[1]], ['height', +m[2]]);
        })
 
-       // readmsg: { source, msg }
+       // readmsg: { peer, msg }
        , line$.flatMap(matchRe(/PEER: readMessage from (\S+): (.*)/)).map(function (m) {
               return ['readmsg', { peer: m[1], msg: m[2] }];
        })
 
-       // writemsg: { dest, msg }
+       // writemsg: { peer, msg }
        , line$.flatMap(matchRe(/PEER: writeMessage to (\S+) (.*)/)).map(function (m) {
               return ['writemsg', { peer: m[1], msg: m[2] }];
        })
@@ -87,7 +89,7 @@ function logstream(path) {
 function asEmitter(path) {
        var emitter = new EventEmitter();
        logstream(path).subscribe(function (ev) {
-              return emitter.emit(ev.name, ev);
+              return emitter.emit.apply(emitter, _toConsumableArray(ev));
        });
        return emitter;
 }

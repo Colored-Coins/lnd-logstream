@@ -1,6 +1,6 @@
 {
   "name": "lnd-logstream",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "lnd log parser and streamer",
   "main": "logstream.es5.js",
   "author": "Nadav Ivgi",
