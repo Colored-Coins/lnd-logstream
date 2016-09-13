@@ -53,8 +53,7 @@ export default function logstream(path) {
 }
 
 export function asEmitter(path) {
-   const emitter = new EventEmitter
-  logstream(path).subscribe(ev => emitter.emit(ev.name, ev))
+  const emitter = new EventEmitter
+  logstream(path).subscribe(ev => emitter.emit(...ev))
   return emitter
 }
-
